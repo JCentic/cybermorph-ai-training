@@ -55,6 +55,13 @@ def generate_comparison_plots():
         df_agg = df.groupby('step').mean().reset_index()
         aggregated_data[algo] = df_agg
         print(f"  • {algo:<4} : Aggregated {len(df)} raw rows down to {len(df_agg)} clean step steps.")
+        
+        # Export a clean, Excel-ready averaged CSV file to a dedicated results_averaged/ directory
+        averaged_dir = "results_averaged"
+        os.makedirs(averaged_dir, exist_ok=True)
+        clean_csv_path = os.path.join(averaged_dir, f"{algo.lower()}_results_averaged.csv")
+        df_agg.to_csv(clean_csv_path, index=False)
+        print(f"✓ Saved clean averaged CSV: {clean_csv_path}")
 
     # Apply clean premium grid styling
     plt.style.use('seaborn-v0_8-whitegrid' if 'seaborn-v0_8-whitegrid' in plt.style.available else 'default')

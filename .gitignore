@@ -11,7 +11,7 @@ __pycache__/
 *.pyo
 *.pyd
 
-# 📊 3. Raw Training Data Logs (Generated locally)
+# 📊 3. Raw & Averaged Training Data Logs (Generated locally)
 results/*.csv
 
 # 📝 4. Markdown Files (As requested)
