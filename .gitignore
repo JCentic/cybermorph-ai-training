@@ -13,6 +13,7 @@ __pycache__/
 
 # 📊 3. Raw & Averaged Training Data Logs (Generated locally)
 results/*.csv
+results_all_steps/
 
 # 📝 4. Markdown Files (As requested)
 *.md

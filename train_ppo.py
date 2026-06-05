@@ -123,6 +123,34 @@ class EvaluationCallback(BaseCallback):
         return True
 
 
+class StepLoggerCallback(BaseCallback):
+    """
+    HIGH-PERFORMANCE STEP-BY-STEP LOGGER
+    Saves every single step's reward to RAM and writes to CSV at the end.
+    """
+    def __init__(self, csv_file="results_all_steps/ppo_all_steps.csv"):
+        super().__init__()
+        self.csv_file = csv_file
+        self.data = []
+        self.step_count = 0
+
+    def _on_step(self) -> bool:
+        self.step_count += 1
+        # Extract immediate reward from the training environment
+        reward = self.locals['rewards'][0]
+        self.data.append((self.step_count, reward))
+        return True
+
+    def _on_training_end(self):
+        # High-speed batch write at the very end of training
+        os.makedirs(os.path.dirname(self.csv_file), exist_ok=True)
+        with open(self.csv_file, 'w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(['step', 'reward'])
+            writer.writerows(self.data)
+        print(f"✓ Saved high-resolution steps to: {self.csv_file}")
+
+
 def train(seeds: list):
     """
     TRAIN PPO FOR SPECIFIED SEEDS
@@ -190,6 +218,10 @@ def train(seeds: list):
             eval_env=eval_env
         )
         
+        step_logger_callback = StepLoggerCallback(
+            csv_file=f"results_all_steps/ppo_all_steps_seed_{seed}.csv"
+        )
+        
         # ─────────────────────────────────────────────────────────
         # TRAIN THE MODEL
         # ─────────────────────────────────────────────────────────
@@ -206,7 +238,7 @@ def train(seeds: list):
         print(f"\nTraining PPO for 300,000 steps (seed={seed})...")
         print("Evaluation every 10,000 steps...\n")
         
-        model.learn(total_timesteps=300000, callback=callback)
+        model.learn(total_timesteps=300000, callback=[callback, step_logger_callback])
         
         # ─────────────────────────────────────────────────────────
         # CLEANUP
