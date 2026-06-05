@@ -144,7 +144,7 @@ class StepLoggerCallback(BaseCallback):
             writer = csv.writer(f)
             writer.writerow(['step', 'reward'])
             writer.writerows(self.data)
-        print(f"✓ Saved high-resolution steps to: {self.csv_file}")
+        print(f"[OK] Saved high-resolution steps to: {self.csv_file}")
 
 
 def train(seeds: list):
@@ -197,7 +197,7 @@ def train(seeds: list):
         env.close()
         eval_env.close()
         
-        print(f"\n✓ A2C training complete (seed={seed})")
+        print(f"\n[OK] A2C training complete (seed={seed})")
         print(f"  Results saved to: results/a2c_results.csv")
 
 

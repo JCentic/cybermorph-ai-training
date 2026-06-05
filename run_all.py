@@ -65,7 +65,7 @@ def run_pipeline(phase: str):
         train_ppo(seeds=seeds)
         durations['PPO'] = time.time() - ppo_start
     except Exception as e:
-        print(f"\n❌ PPO Training failed: {e}")
+        print(f"\n[FAILED] PPO Training failed: {e}")
         durations['PPO'] = "FAILED"
         
     # ─── 2. DQN TRAINING ───
@@ -75,7 +75,7 @@ def run_pipeline(phase: str):
         train_dqn(seeds=seeds)
         durations['DQN'] = time.time() - dqn_start
     except Exception as e:
-        print(f"\n❌ DQN Training failed: {e}")
+        print(f"\n[FAILED] DQN Training failed: {e}")
         durations['DQN'] = "FAILED"
         
     # ─── 3. A2C TRAINING ───
@@ -85,7 +85,7 @@ def run_pipeline(phase: str):
         train_a2c(seeds=seeds)
         durations['A2C'] = time.time() - a2c_start
     except Exception as e:
-        print(f"\n❌ A2C Training failed: {e}")
+        print(f"\n[FAILED] A2C Training failed: {e}")
         durations['A2C'] = "FAILED"
         
     # ─── 4. SUMMARY REPORT ───

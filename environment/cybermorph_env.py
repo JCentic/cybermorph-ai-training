@@ -142,7 +142,7 @@ class CyberMorphEnv(gym.Env):
         self.confidence = 0.5  # Starting confidence (0-1)
         self.consecutive_safe_events = 0
         
-        print("✓ CyberMorphEnv initialized")
+        print("[OK] CyberMorphEnv initialized")
         print(f"  Observation space: {self.observation_space}")
         print(f"  Action space: {self.action_space}")
         print(f"  Loaded {len(self.player_profiles)} player profiles")

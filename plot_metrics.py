@@ -54,14 +54,14 @@ def generate_comparison_plots():
         # and calculate the mean for each column
         df_agg = df.groupby('step').mean().reset_index()
         aggregated_data[algo] = df_agg
-        print(f"  • {algo:<4} : Aggregated {len(df)} raw rows down to {len(df_agg)} clean step steps.")
+        print(f"  - {algo:<4} : Aggregated {len(df)} raw rows down to {len(df_agg)} clean step steps.")
         
         # Export a clean, Excel-ready averaged CSV file to a dedicated results_averaged/ directory
         averaged_dir = "results_averaged"
         os.makedirs(averaged_dir, exist_ok=True)
         clean_csv_path = os.path.join(averaged_dir, f"{algo.lower()}_results_averaged.csv")
         df_agg.to_csv(clean_csv_path, index=False)
-        print(f"✓ Saved clean averaged CSV: {clean_csv_path}")
+        print(f"[OK] Saved clean averaged CSV: {clean_csv_path}")
 
     # Apply clean premium grid styling
     plt.style.use('seaborn-v0_8-whitegrid' if 'seaborn-v0_8-whitegrid' in plt.style.available else 'default')
@@ -94,7 +94,7 @@ def generate_comparison_plots():
     plt.tight_layout()
     plt.savefig(reward_plot_path, dpi=300)
     plt.close()
-    print(f"✓ Saved reward comparison plot: {reward_plot_path}")
+    print(f"[OK] Saved reward comparison plot: {reward_plot_path}")
     
     # ─── PLOT 2: ATTACK DIVERSITY COMPARISON ───
     fig, ax = plt.subplots(figsize=(11, 6.5), facecolor=fig_color)
@@ -115,7 +115,7 @@ def generate_comparison_plots():
     plt.tight_layout()
     plt.savefig(div_plot_path, dpi=300)
     plt.close()
-    print(f"✓ Saved diversity comparison plot: {div_plot_path}")
+    print(f"[OK] Saved diversity comparison plot: {div_plot_path}")
     
     # ─── PLOT 3: STATISTICAL SUMMARY TABLE ───
     report_path = os.path.join(charts_dir, "summary_table.md")
@@ -137,7 +137,7 @@ def generate_comparison_plots():
             
     with open(report_path, 'w') as f:
         f.write("\n".join(report_lines))
-    print(f"✓ Generated Capstone Summary Report: {report_path}")
+    print(f"[OK] Generated Capstone Summary Report: {report_path}")
 
 
 if __name__ == "__main__":
