@@ -13,7 +13,7 @@ Prints one line per check and "RESULT: OK" when all pass.
 
 import numpy as np
 
-from environment.cybermorph_env import CyberMorphEnv
+from environment.cybermorph_env import RUN_CARDS_BY_STAGE, CyberMorphEnv
 from observation import action_mask
 
 
@@ -122,8 +122,35 @@ def check_observation_range_and_episode_end():
             assert obs.min() >= 0.0 and obs.max() <= 1.0, "observation left 0 to 1"
             if terminated or truncated:
                 break
-        assert steps <= 100, "an episode is at most 100 steps"
-    print("ok  observations stay in 0 to 1 and episodes end within 100 steps")
+        assert steps <= RUN_CARDS_BY_STAGE[stage], "an episode is at most as long as a real run of its map"
+    print("ok  observations stay in 0 to 1 and episodes end within the length of a real run")
+
+
+def check_episode_length_follows_the_map():
+    # An episode is as long as a real run (8, 15, 22 or 30 cards). With a mild player the credits never run out first, so the full length is played.
+    assert RUN_CARDS_BY_STAGE == {1: 8, 2: 15, 3: 22, 4: 30}, RUN_CARDS_BY_STAGE
+    for stage, cards in RUN_CARDS_BY_STAGE.items():
+        env, obs, _ = make(stage)
+        env.weakness_vector[:] = 0.0  # a player who never fails: the credits only go up
+        steps, truncated = 0, False
+        while not truncated:
+            _, _, terminated, truncated, _ = env.step(0)
+            steps += 1
+            assert not terminated
+        assert steps == cards, (stage, steps, cards)
+    assert list(RUN_CARDS_BY_STAGE.values()) == sorted(RUN_CARDS_BY_STAGE.values()), "later maps are longer"
+    print("ok  an episode lasts 8, 15, 22 and 30 cards on the four maps")
+
+
+def check_evaluation_can_use_other_players():
+    other = {"real-x": {"username": "x", "description": "d", "weakness": [0.3] * 8, "fp_rate": [0.1] * 8, "avg_response_time_ms": 2500}}
+    env = CyberMorphEnv(profiles=other)
+    _, info = env.reset(seed=3)
+    assert info["profile"] == "real-x", info
+    default_env = CyberMorphEnv()
+    _, info = default_env.reset(seed=3)
+    assert info["profile"] != "real-x"
+    print("ok  an environment can be given its own simulated players; the default is the invented five")
 
 
 if __name__ == "__main__":
@@ -135,4 +162,6 @@ if __name__ == "__main__":
     check_safe_card_means_blocking_is_failure()
     check_same_seed_same_episode()
     check_observation_range_and_episode_end()
+    check_episode_length_follows_the_map()
+    check_evaluation_can_use_other_players()
     print("RESULT: OK")

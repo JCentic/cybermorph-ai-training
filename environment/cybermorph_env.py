@@ -49,7 +49,12 @@ from observation import (
     build_observation,
 )
 
-MAX_STEPS = 100          # an episode is at most this many steps
+# How many cards the agent chooses in one episode, per map stage. It is the number of cards a real run of that map has, so the agent is trained
+# on runs that look like the real ones (before 2026-11-11 every episode was up to 100 cards, far longer than a real run).
+# Where the numbers come from: a map's time divided by the time between two cards (the 8 to 10 second cooldown plus the time to answer, about 12 s):
+#   Home 90 s -> 8, Office 180 s -> 15, Internet Cafe 270 s -> 22, Public Park 360 s -> 30.
+# The testers' real runs agree: at most 7, 14, 21 and 25 cards (analysis of data/, 2026-11-11). The 9 judging cards before a run are not counted here.
+RUN_CARDS_BY_STAGE = {1: 8, 2: 15, 3: 22, 4: 30}
 START_CREDITS = 500      # inside the simulation only; the agent never sees it
 JUDGING_LEVELS = 3       # the game's judging session: 3 levels ...
 JUDGING_CARDS_PER_LEVEL = 3   # ... of 3 cards each (JudgingSettings), at least 1 safe per level
@@ -68,14 +73,16 @@ class CyberMorphEnv(gym.Env):
 
     metadata = {"render_modes": []}  # No rendering needed for training
 
-    def __init__(self):
+    def __init__(self, profiles=None):
+        # `profiles`: the simulated players of this environment (a dict like DERIVED_WEAKNESS). None means the five invented ones (training_data.py). The evaluation can be given
+        # other players that the agent never trained on (see training_common.load_held_out_profiles).
         # Box(shape=(20,)): 20 values in 0 to 1 (see observation.py)
         self.observation_space = spaces.Box(low=0.0, high=1.0, shape=(20,), dtype=np.float32)
 
         # Discrete(16): attack_type (8) x threat_or_safe (2)
         self.action_space = spaces.Discrete(16)
 
-        self.player_profiles = DERIVED_WEAKNESS
+        self.player_profiles = profiles if profiles is not None else DERIVED_WEAKNESS
 
         # Hidden truth of the simulated player (set in reset)
         self.current_profile = None
@@ -196,7 +203,7 @@ class CyberMorphEnv(gym.Env):
         is_threat = action % 2 == 0
 
         self.episode_step += 1
-        truncated = self.episode_step >= MAX_STEPS
+        truncated = self.episode_step >= RUN_CARDS_BY_STAGE[self.stage]
 
         # Invalid action: costs the step, pays nothing, changes nothing.
         if not action_mask(self.stage)[action]:
