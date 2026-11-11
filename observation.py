@@ -76,6 +76,27 @@ def _clip01(value):
     return max(0.0, min(1.0, value))
 
 
+# --- OBSERVATION VERSION 2 (29 numbers): the 20 above, plus what a coach needs to PLAN ---
+#    20-27  practice count per category: threat cards of that category among the last WINDOW_SIZE answers, over PRACTICE_CAP (capped at 1).
+#           Tells the agent how sure each estimate is and which categories were not practised yet.
+#    28     cards left in this run over the cards of the whole run (1.0 at the start, 0 at the end). The game knows it: it is the time left over the map's time.
+PRACTICE_CAP = 10
+OBS2_SIZE = 29
+
+
+def build_observation_v2(window, stage, cards_left_share):
+    """The 29 numbers of version 2: build_observation() plus the practice counts and the share of the run left."""
+    obs = build_observation(window, stage)
+    recent = list(window)[-WINDOW_SIZE:]
+    practice = [0] * N_CATEGORIES
+    for category, is_threat, _correct, _response_ms in recent:
+        if is_threat:
+            practice[category] += 1
+    obs.extend(_clip01(count / PRACTICE_CAP) for count in practice)
+    obs.append(_clip01(cards_left_share))
+    return obs
+
+
 def build_observation(window, stage):
     """The 20 numbers for this window and stage, as a list of floats."""
     recent = list(window)[-WINDOW_SIZE:]

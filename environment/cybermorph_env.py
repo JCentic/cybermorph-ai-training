@@ -47,6 +47,7 @@ from observation import (
     WINDOW_SIZE,
     action_mask,
     build_observation,
+    build_observation_v2,
 )
 
 # How many cards the agent chooses in one episode, per map stage. It is the number of cards a real run of that map has, so the agent is trained
@@ -92,7 +93,10 @@ class CyberMorphEnv(gym.Env):
 
     metadata = {"render_modes": []}  # No rendering needed for training
 
-    def __init__(self, profiles=None, learning=False, practise_rate=None, forget_rate=None, reward_mode="weakness"):
+    def __init__(self, profiles=None, learning=False, practise_rate=None, forget_rate=None, reward_mode="weakness", observation_version=1):
+        # observation_version 1: the 20 numbers of observation.py. Version 2: 29 numbers (adds the practice counts and the share of the run left) so the agent can plan.
+        assert observation_version in (1, 2), observation_version
+        self.observation_version = observation_version
         assert reward_mode in REWARD_MODES, reward_mode
         assert reward_mode == "weakness" or learning, "the improvement reward needs learning=True (a player who never improves can give no improvement reward)"
         self.reward_mode = reward_mode
@@ -103,7 +107,7 @@ class CyberMorphEnv(gym.Env):
         # `profiles`: the simulated players of this environment (a dict like DERIVED_WEAKNESS). None means the five invented ones (training_data.py). The evaluation can be given
         # other players that the agent never trained on (see training_common.load_held_out_profiles).
         # Box(shape=(20,)): 20 values in 0 to 1 (see observation.py)
-        self.observation_space = spaces.Box(low=0.0, high=1.0, shape=(20,), dtype=np.float32)
+        self.observation_space = spaces.Box(low=0.0, high=1.0, shape=(20 if observation_version == 1 else 29,), dtype=np.float32)
 
         # Discrete(16): attack_type (8) x threat_or_safe (2)
         self.action_space = spaces.Discrete(16)
@@ -238,6 +242,9 @@ class CyberMorphEnv(gym.Env):
 
     def _get_obs(self):
         """The 20 numbers the agent sees: estimates from the window, not the truth."""
+        if self.observation_version == 2:
+            left = 1.0 - self.episode_step / RUN_CARDS_BY_STAGE[self.stage]
+            return np.array(build_observation_v2(self.window, self.stage, left), dtype=np.float32)
         return np.array(build_observation(self.window, self.stage), dtype=np.float32)
 
     def step(self, action):

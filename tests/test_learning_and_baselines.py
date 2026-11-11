@@ -157,7 +157,25 @@ def check_improvement_reward():
     print("ok  the improvement reward pays for a falling weakness only")
 
 
+def check_observation_version_2():
+    from observation import build_observation_v2
+    env = CyberMorphEnv(learning=True, reward_mode="improvement", observation_version=2)
+    obs, _ = env.reset(seed=5, options={"stage": 2})
+    assert obs.shape == (29,) and env.observation_space.shape == (29,)
+    assert abs(obs[28] - 1.0) < 1e-6, "the whole run is left at the start"
+    first = obs[20:28].copy()
+    assert first[0] > 0 or first[:4].sum() > 0, "the judging cards already count as practice"
+    for _ in range(15):
+        obs, _, _, truncated, _ = env.step(0)
+    assert truncated and obs[28] == 0.0, "no cards left at the end of the run"
+    assert obs[20] >= first[0], "practising category 0 raises its count"
+    assert np.all((obs >= 0) & (obs <= 1))
+    assert len(build_observation_v2([], 1, 0.5)) == 29
+    print("ok  observation version 2 has 29 numbers: the 20, the practice counts and the share of the run left")
+
+
 if __name__ == "__main__":
+    check_observation_version_2()
     check_improvement_reward()
     check_default_world_has_no_learning()
     check_practice_lowers_the_practised_weakness_only_a_little()

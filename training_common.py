@@ -42,6 +42,7 @@ CSV_HEADER = ['seed', 'step', 'stage', 'mean_reward', 'reward_std', 'unique_atta
 HELD_OUT_FILE = os.path.join("data", "profiles_real.json")
 DEFAULT_RESPONSE_MS = 3000.0
 TRAIN_PRACTISE_RATE = 0.06
+OBSERVATION_VERSION = 2   # Model 3: the agent also sees the practice counts and the share of the run left
 
 
 def load_held_out_profiles(path=HELD_OUT_FILE):
@@ -197,14 +198,14 @@ def run_training(algo_name, algo_class, model_kwargs, seeds, total_timesteps=TOT
         # Separate environments for training and evaluation
         # Model 2: the player learns from practice (practise rate 0.06) and the agent is paid for the player's improvement. The comparison afterwards
         # (evaluate_policies.py) also tests at 0.03 and 0.10, so the result does not depend on this one guess.
-        env = CyberMorphEnv(learning=True, practise_rate=TRAIN_PRACTISE_RATE, reward_mode="improvement")
+        env = CyberMorphEnv(learning=True, practise_rate=TRAIN_PRACTISE_RATE, reward_mode="improvement", observation_version=OBSERVATION_VERSION)
         held_out = load_held_out_profiles()
         if held_out is None:
             print("  NOTE: data/profiles_real.json is missing, so the evaluation uses the TRAINING players (not held out).")
             print("        Make it with:  python -m analysis.build_profiles --write")
         else:
             print(f"  Evaluation players the agent never trains on: {', '.join(held_out)}")
-        eval_env = CyberMorphEnv(profiles=held_out, learning=True, practise_rate=TRAIN_PRACTISE_RATE, reward_mode="improvement")
+        eval_env = CyberMorphEnv(profiles=held_out, learning=True, practise_rate=TRAIN_PRACTISE_RATE, reward_mode="improvement", observation_version=OBSERVATION_VERSION)
 
         model = algo_class(policy="MlpPolicy", env=env, seed=seed, verbose=0, **model_kwargs)
 

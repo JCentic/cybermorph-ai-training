@@ -125,6 +125,8 @@ class RLPolicy(Policy):
     def __init__(self, model, label):
         self.model = model
         self.name = label
+        # The model knows how many numbers it was trained to see (20 or 29); the evaluation builds the matching observation.
+        self.obs_version = 2 if model.observation_space.shape[0] == 29 else 1
 
     def act(self, obs, stage):
         action, _ = self.model.predict(obs, deterministic=True)

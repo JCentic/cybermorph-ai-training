@@ -79,6 +79,17 @@ Honest reading:
 - So with one seed, this simulator does not yet show "RL beats simple rules". The claim we can defend today is: RL can learn to coach without being told the rules (PPO matches the fixed pattern), but we have not shown it is better. Do not claim more until the five-seed run and a better setup (see below).
 - Ideas that are still open: more training or tuning, a reward that also pays coverage more, and a simulator where the player has strong and uneven weak spots (the fixed pattern wastes cards there).
 
+### A8. The ceiling check and Model 3: the agent also sees practice counts and the run left (2026-11-12, ONE seed)
+Ceiling (`python ceiling.py`): oracle coaches that read the player's TRUE numbers (never usable in the game) reach skill gain 0.040 / 0.072 / 0.107 at practise rates 0.03 / 0.06 / 0.10, against 0.024 / 0.047 / 0.076 for the standard pattern. So there IS room (+41% to +67%) for a better coach. Looking ahead 4 cards adds nothing: the best play is "a threat card of the category with the biggest gap". Note: the skill gain counts threat cards only, so the oracle never uses a safe card.
+
+Model 3 = Model 2's reward + observation version 2 (29 numbers: the 20, the practice count per category, the share of the run left). Skill gain, Model 2 -> Model 3:
+- practise rate 0.03: PPO 0.026 -> 0.029, DQN 0.020 -> 0.021, A2C 0.024 -> 0.018 (standard pattern 0.024, greedy with variety 0.027)
+- practise rate 0.06: PPO 0.046 -> 0.052, DQN 0.035 -> 0.039, A2C 0.041 -> 0.034 (standard pattern 0.047, greedy with variety 0.050, ceiling 0.072)
+- practise rate 0.10: PPO 0.067 -> 0.077, DQN 0.050 -> 0.060, A2C 0.057 -> 0.052 (standard pattern 0.075, greedy with variety 0.074, ceiling 0.107)
+
+Honest reading: PPO is now the best of all non-oracle policies at all three speeds, but only by a small margin (about +4% to +8% over the best simple rule; one seed; the confidence intervals only cover the random episodes, not different training seeds). It closes about a quarter of the gap between the simple rules and the ceiling. DQN and A2C are still below the standard pattern, and both still pick invalid cards (DQN 1.3, A2C 2.0 per episode), so they are not usable as they are. Do not claim "RL clearly beats simple rules" yet: first repeat with the five seeds of Phase B.
+Open ideas: a reward paid at the end of the run, longer training and PPO tuning, action masking for the invalid cards.
+
 ## Part B - which of the three algorithms (PPO, DQN, A2C) is best
 
 ### B1. What we compare

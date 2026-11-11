@@ -54,6 +54,8 @@ def play_episode(env, policy, seed, stage, profile):
     """One episode. Returns the four metrics and the number of invalid actions."""
     obs, info = env.reset(seed=seed, options={"stage": stage, "profile": profile})
     policy.reset(np.random.default_rng(seed))
+    if hasattr(policy, "bind"):
+        policy.bind(env)  # an oracle (ceiling.py) may look at the player's TRUE numbers; no real policy can
     offered = 2 * stage
     weak_count = max(1, int(np.ceil(offered / 4.0)))  # the weakest quarter of the offered categories
     weakest = set(int(c) for c in np.argsort(-env.start_weakness[:offered])[:weak_count])
@@ -88,7 +90,7 @@ def play_episode(env, policy, seed, stage, profile):
 
 def evaluate(policy, profiles, episodes, practise_rate):
     """All the episodes of one policy: every player x every stage x `episodes`. Returns {metric: [values...]} (one value per episode)."""
-    env = CyberMorphEnv(profiles=profiles, learning=True, practise_rate=practise_rate)
+    env = CyberMorphEnv(profiles=profiles, learning=True, practise_rate=practise_rate, observation_version=getattr(policy, "obs_version", 1))
     values = {name: [] for name in METRICS + ["invalid"]}
     seed = BASE_SEED
     for profile in profiles:
@@ -112,13 +114,13 @@ def summarise(values):
     return out
 
 
-def load_models(names):
+def load_models(names, folder="models"):
     """The saved seed-42 models of the algorithms asked for (ppo, dqn, a2c), as RL policies."""
     from stable_baselines3 import A2C, DQN, PPO
     classes = {"ppo": PPO, "dqn": DQN, "a2c": A2C}
     policies = []
     for name in names:
-        path = os.path.join("models", "%s_seed_42.zip" % name)
+        path = os.path.join(folder, "%s_seed_42.zip" % name)
         if name not in classes or not os.path.exists(path):
             print("  skipped %s: no file %s" % (name, path))
             continue
@@ -142,6 +144,7 @@ def main(argv):
     parser.add_argument("--models", nargs="*", default=[], help="saved models to include: ppo dqn a2c")
     parser.add_argument("--episodes", type=int, default=DEFAULT_EPISODES, help="episodes per player and stage")
     parser.add_argument("--learning-rates", nargs="*", type=float, default=[PRACTISE_RATE], help="practise rates to try (the assumption)")
+    parser.add_argument("--models-dir", default="models", help="folder of the saved models (the older ones are in models/model1_... and models/model2_...)")
     parser.add_argument("--write", action="store_true", help="write results/policy_comparison.csv")
     args = parser.parse_args(argv)
 
@@ -151,7 +154,7 @@ def main(argv):
         print("NOTE: data/profiles_real.json is missing: the five INVENTED players are used (not held out for the RL agent).")
     else:
         print("Players the RL agent never trained on: %s" % ", ".join(profiles))
-    policies = all_baselines() + load_models(args.models)
+    policies = all_baselines() + load_models(args.models, args.models_dir)
     csv_rows = []
     for rate in args.learning_rates:
         rows = []
