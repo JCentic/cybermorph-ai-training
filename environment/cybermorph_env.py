@@ -66,6 +66,14 @@ PRACTISE_RATE = 0.06
 FORGET_RATE = 0.01
 WEAKNESS_FLOOR = 0.05
 FP_FLOOR = 0.02
+
+# --- THE TWO REWARDS ---
+# "weakness"    (Model 1, the first reward) pays the agent when the simulated player FAILS the card. It finds weak spots, but a coach rewarded for failures keeps
+#               hitting the same weak spot and the player does not improve (RESULTS.md, A6).
+# "improvement" (Model 2) pays the agent when the player's average weakness FALLS after the card (needs learning=True), plus the same variety bonus and repetition penalty.
+#               This is what a coach is for: the player gets better. IMPROVEMENT_SCALE turns a tiny drop (about 0.002 to 0.01 per card) into a reward of a size like the old one.
+REWARD_MODES = ("weakness", "improvement")
+IMPROVEMENT_SCALE = 50.0
 START_CREDITS = 500      # inside the simulation only; the agent never sees it
 JUDGING_LEVELS = 3       # the game's judging session: 3 levels ...
 JUDGING_CARDS_PER_LEVEL = 3   # ... of 3 cards each (JudgingSettings), at least 1 safe per level
@@ -84,7 +92,10 @@ class CyberMorphEnv(gym.Env):
 
     metadata = {"render_modes": []}  # No rendering needed for training
 
-    def __init__(self, profiles=None, learning=False, practise_rate=None, forget_rate=None):
+    def __init__(self, profiles=None, learning=False, practise_rate=None, forget_rate=None, reward_mode="weakness"):
+        assert reward_mode in REWARD_MODES, reward_mode
+        assert reward_mode == "weakness" or learning, "the improvement reward needs learning=True (a player who never improves can give no improvement reward)"
+        self.reward_mode = reward_mode
         # `learning`: True makes the simulated player improve with practice (see the learning model above). Default False: the training world, unchanged.
         self.learning = learning
         self.practise_rate = PRACTISE_RATE if practise_rate is None else practise_rate
@@ -257,8 +268,10 @@ class CyberMorphEnv(gym.Env):
         self.attack_history.append(attack_type)
 
         attack_succeeds = self._answer(attack_type, is_threat)
+        weakness_before = self.mean_weakness(self.weakness_vector)
         if self.learning:
             self._learn(attack_type, is_threat)
+        self._improvement = weakness_before - self.mean_weakness(self.weakness_vector)
 
         # Player loses credits when attacked, gains them when defending.
         # Credits only decide when an episode ends; the agent never sees them.
@@ -294,7 +307,10 @@ class CyberMorphEnv(gym.Env):
         Known quirk, kept on purpose: with a one-step history the repetition
         share is 1.0, so the first step of an episode pays 0.
         """
-        base_reward = 1.0 if attack_succeeds else 0.05
+        if self.reward_mode == "improvement":
+            base_reward = max(self._improvement, 0.0) * IMPROVEMENT_SCALE
+        else:
+            base_reward = 1.0 if attack_succeeds else 0.05
 
         diversity = len(set(self.attack_history)) / 8.0
         diversity_bonus = diversity * 0.2

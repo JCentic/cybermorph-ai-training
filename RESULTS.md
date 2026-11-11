@@ -66,6 +66,19 @@ What it says:
 - The same ordering holds at the three practise rates, so it does not depend on the learning-speed guess.
 - **Next step (not done):** a reward that matches the goal, for example the fall of the player's average weakness plus a coverage bonus, trained with the learning model switched on at one practise rate and tested at the others.
 
+### A7. Model 2: the reward changed to "player improvement" (2026-11-12, ONE seed)
+Model 1 (A6) paid the agent when the player FAILED. Model 2 pays when the simulated player's average weakness FALLS after the card (plus the same variety bonus and repetition penalty). It is trained with the learning model on at practise rate 0.06 and tested at 0.03, 0.06 and 0.10. Model 1 files are kept in `models/model1_weakness_targeting/` and `results/model1/`.
+
+Skill gain at practise rate 0.06 (higher is better), Model 1 -> Model 2: PPO 0.038 -> 0.046, DQN 0.008 -> 0.035, A2C 0.010 -> 0.041.
+The fixed rivals: random 0.034, standard pattern 0.047, greedy weakest 0.048, greedy with variety 0.050.
+
+Honest reading:
+- The new reward fixes the main problem of Model 1: the RL agents now help the player improve (DQN and A2C by a lot).
+- PPO now ties the standard pattern (0.046 vs 0.047). No RL model beats the fixed pattern or "greedy with variety" at any of the three speeds (at 0.10 PPO 0.067 vs 0.075).
+- The agents still use few categories (coverage 0.38 to 0.48 against 1.0 for the standard pattern), and their weak-spot lift is BELOW chance (0.3 to 0.5), so they do not find the weakest categories either.
+- So with one seed, this simulator does not yet show "RL beats simple rules". The claim we can defend today is: RL can learn to coach without being told the rules (PPO matches the fixed pattern), but we have not shown it is better. Do not claim more until the five-seed run and a better setup (see below).
+- Ideas that are still open: more training or tuning, a reward that also pays coverage more, and a simulator where the player has strong and uneven weak spots (the fixed pattern wastes cards there).
+
 ## Part B - which of the three algorithms (PPO, DQN, A2C) is best
 
 ### B1. What we compare

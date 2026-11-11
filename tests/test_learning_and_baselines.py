@@ -137,7 +137,28 @@ def check_evaluation_is_repeatable_and_fair():
     print("ok  the evaluation repeats exactly, and skill gain is zero without learning and positive with it")
 
 
+def check_improvement_reward():
+    # Model 2: the reward follows the fall of the player's weakness, not the player's failure.
+    try:
+        CyberMorphEnv(learning=False, reward_mode="improvement")
+        raise SystemExit("improvement reward must need learning=True")
+    except AssertionError:
+        pass
+    env, _, _ = make(True, reward_mode="improvement")
+    rewards = [float(env.step((k * 2) % 16)[1]) for k in range(12)]
+    assert all(0.0 <= r <= 2.0 for r in rewards), rewards
+    assert sum(rewards) > 0.5, rewards
+    # A player who cannot improve any more (everything at the floor) gives no improvement reward.
+    env2, _, _ = make(True, reward_mode="improvement")
+    env2.weakness_vector[:] = WEAKNESS_FLOOR
+    env2.start_weakness[:] = WEAKNESS_FLOOR
+    env2.step(0)
+    assert float(env2.step(2)[1]) <= 0.2 + 1e-6
+    print("ok  the improvement reward pays for a falling weakness only")
+
+
 if __name__ == "__main__":
+    check_improvement_reward()
     check_default_world_has_no_learning()
     check_practice_lowers_the_practised_weakness_only_a_little()
     check_safe_cards_train_the_false_positive_rate()

@@ -97,7 +97,8 @@ def check_no_old_words():
     for folder, dirs, files in os.walk(REPO):
         dirs[:] = [d for d in dirs if d not in ("venv", ".git", "__pycache__")]
         for name in files:
-            if name.endswith(".py"):
+            # test_load_exports.py uses an old name on purpose: it checks that old exports are still read.
+            if name.endswith(".py") and name != "test_load_exports.py":
                 path = os.path.join(folder, name)
                 with open(path, encoding="utf-8") as f:
                     if pattern.search(f.read()):
