@@ -45,6 +45,27 @@ Every number comes with a 95% confidence interval (100 episodes per player and s
 | greedy with variety | | | | |
 | RL (winner) | | | | |
 
+### A6. Sanity run of 2026-11-11 (ONE seed, so not a final result)
+Trained PPO, DQN and A2C with seed 42 (300,000 steps), then compared them with the four baselines on the three real-data groups, 100 episodes per player and stage, at practise rates 0.03, 0.06 and 0.10 (`results/policy_comparison.csv`). At practise rate 0.06:
+
+| Policy | Skill gain | Weak-spot lift | Coverage |
+|---|---|---|---|
+| random | 0.034 | 1.06 | 0.98 |
+| standard pattern | 0.047 | 1.01 | 1.00 |
+| greedy weakest | 0.048 | 1.49 | 0.55 |
+| greedy with variety | 0.050 | 1.35 | 0.73 |
+| RL PPO | 0.038 | 0.30 | 0.39 |
+| RL DQN | 0.008 | 2.57 | 0.33 |
+| RL A2C | 0.010 | 2.47 | 0.36 |
+
+What it says:
+- **Claim 1 (finds weak spots):** DQN and A2C pick weak-spot categories about 2.5 times more than chance, more than the greedy rules (1.5). PPO does not (0.3). So two of the three RL agents do find weak spots.
+- **Claim 2 (helps players improve) is NOT shown:** every RL agent has a LOWER skill gain than the standard pattern and the greedy rules, at all three practise rates. DQN and A2C gain almost nothing.
+- **Why:** the RL agents were trained with the reward "the player fails the card". That rewards hammering the same weak spots (coverage 0.33 to 0.39), and once one category is practised its gain flattens, while the other categories stay weak. The reward does not match the goal "the player improves".
+- **The fixed standard pattern is a strong baseline** for skill gain (practise everything evenly).
+- The same ordering holds at the three practise rates, so it does not depend on the learning-speed guess.
+- **Next step (not done):** a reward that matches the goal, for example the fall of the player's average weakness plus a coverage bonus, trained with the learning model switched on at one practise rate and tested at the others.
+
 ## Part B - which of the three algorithms (PPO, DQN, A2C) is best
 
 ### B1. What we compare
