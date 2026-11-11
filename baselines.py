@@ -120,17 +120,35 @@ class GreedyWithVariety(GreedyWeakest):
 
 
 class RLPolicy(Policy):
-    """A trained Stable-Baselines3 model (PPO, DQN or A2C). It chooses the best action it knows, with no random exploring."""
+    """A trained Stable-Baselines3 model (PPO, DQN or A2C). It chooses the best action it knows, with no random exploring.
 
-    def __init__(self, model, label):
+    ACTION MASKING: with masked=True (the default) the policy first removes the actions that are not allowed on this map (action_mask), then takes the best of the
+    rest. This is what the game does anyway: it never offers a card that does not exist. It works the same for the three algorithms because it only uses
+    their own scores (the Q-values of DQN, the log-probabilities of PPO and A2C). masked=False is the raw agent, which can still choose an invalid action."""
+
+    def __init__(self, model, label, masked=True):
+        self.masked = masked
         self.model = model
         self.name = label
         # The model knows how many numbers it was trained to see (20 or 29); the evaluation builds the matching observation.
         self.obs_version = 2 if model.observation_space.shape[0] == 29 else 1
 
+    def scores(self, obs):
+        """16 numbers, higher is better: the Q-values (DQN) or the log-probabilities (PPO, A2C) of the model."""
+        import torch
+        tensor, _ = self.model.policy.obs_to_tensor(obs)
+        with torch.no_grad():
+            if hasattr(self.model, "q_net"):
+                return self.model.q_net(tensor)[0].cpu().numpy().astype(float)
+            return self.model.policy.get_distribution(tensor).distribution.logits[0].cpu().numpy().astype(float)
+
     def act(self, obs, stage):
-        action, _ = self.model.predict(obs, deterministic=True)
-        return int(action)
+        if not self.masked:
+            action, _ = self.model.predict(obs, deterministic=True)
+            return int(action)
+        scores = self.scores(obs)
+        scores[~np.asarray(action_mask(stage), dtype=bool)] = -np.inf
+        return int(np.argmax(scores))
 
 
 def all_baselines():

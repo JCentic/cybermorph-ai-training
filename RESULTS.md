@@ -90,6 +90,14 @@ Model 3 = Model 2's reward + observation version 2 (29 numbers: the 20, the prac
 Honest reading: PPO is now the best of all non-oracle policies at all three speeds, but only by a small margin (about +4% to +8% over the best simple rule; one seed; the confidence intervals only cover the random episodes, not different training seeds). It closes about a quarter of the gap between the simple rules and the ceiling. DQN and A2C are still below the standard pattern, and both still pick invalid cards (DQN 1.3, A2C 2.0 per episode), so they are not usable as they are. Do not claim "RL clearly beats simple rules" yet: first repeat with the five seeds of Phase B.
 Open ideas: a reward paid at the end of the run, longer training and PPO tuning, action masking for the invalid cards.
 
+### A9. Action masking (2026-11-12, ONE seed, the same Model 3 files)
+`RLPolicy` now removes the actions that are not allowed on the map before it picks the best one (`--raw` turns this off). The game does the same, because it never offers a card that does not exist. It uses each model's own scores (Q-values for DQN, log-probabilities for PPO and A2C), so no retraining and no new library were needed. Invalid actions fall to 0 for all three.
+
+Skill gain with masking (practise rate 0.03 / 0.06 / 0.10): PPO 0.029 / 0.052 / 0.077 (unchanged: it never chose invalid cards), DQN 0.022 / 0.041 / 0.063, A2C 0.029 / 0.054 / 0.084 (before masking 0.018 / 0.034 / 0.052).
+Best simple rule: 0.027 / 0.050 / 0.075. Ceiling (cheating coach): 0.040 / 0.072 / 0.107.
+
+Honest reading: A2C gained the most, and with masking A2C and PPO are both above the best simple rule at all three speeds (A2C by about 8% at 0.06 and 12% at 0.10; PPO by about 4% and 3%). DQN stays below the standard pattern. One seed: the Phase B run with five seeds must confirm it before we claim it. Because masking removes invalid actions, the "invalid < 0.5" gate of B3 only matters for the raw agent; report both.
+
 ## Part B - which of the three algorithms (PPO, DQN, A2C) is best
 
 ### B1. What we compare

@@ -114,7 +114,7 @@ def summarise(values):
     return out
 
 
-def load_models(names, folder="models"):
+def load_models(names, folder="models", masked=True):
     """The saved seed-42 models of the algorithms asked for (ppo, dqn, a2c), as RL policies."""
     from stable_baselines3 import A2C, DQN, PPO
     classes = {"ppo": PPO, "dqn": DQN, "a2c": A2C}
@@ -124,7 +124,7 @@ def load_models(names, folder="models"):
         if name not in classes or not os.path.exists(path):
             print("  skipped %s: no file %s" % (name, path))
             continue
-        policies.append(RLPolicy(classes[name].load(path), "RL " + name.upper()))
+        policies.append(RLPolicy(classes[name].load(path), "RL " + name.upper() + ("" if masked else " raw"), masked))
     return policies
 
 
@@ -145,6 +145,7 @@ def main(argv):
     parser.add_argument("--episodes", type=int, default=DEFAULT_EPISODES, help="episodes per player and stage")
     parser.add_argument("--learning-rates", nargs="*", type=float, default=[PRACTISE_RATE], help="practise rates to try (the assumption)")
     parser.add_argument("--models-dir", default="models", help="folder of the saved models (the older ones are in models/model1_... and models/model2_...)")
+    parser.add_argument("--raw", action="store_true", help="do NOT mask the invalid actions (the raw agent); default is masked, like the game")
     parser.add_argument("--write", action="store_true", help="write results/policy_comparison.csv")
     args = parser.parse_args(argv)
 
@@ -154,7 +155,7 @@ def main(argv):
         print("NOTE: data/profiles_real.json is missing: the five INVENTED players are used (not held out for the RL agent).")
     else:
         print("Players the RL agent never trained on: %s" % ", ".join(profiles))
-    policies = all_baselines() + load_models(args.models, args.models_dir)
+    policies = all_baselines() + load_models(args.models, args.models_dir, not args.raw)
     csv_rows = []
     for rate in args.learning_rates:
         rows = []

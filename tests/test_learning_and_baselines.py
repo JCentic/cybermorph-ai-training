@@ -174,7 +174,33 @@ def check_observation_version_2():
     print("ok  observation version 2 has 29 numbers: the 20, the practice counts and the share of the run left")
 
 
+def check_action_masking_for_rl_policies():
+    # A fake model whose best score is always an INVALID action: the masked policy must still choose a valid one, the raw one chooses the invalid one.
+    import torch
+
+    class FakeModel:
+        class policy:
+            @staticmethod
+            def obs_to_tensor(obs):
+                return torch.zeros((1, 20)), False
+        q_net = staticmethod(lambda t: torch.tensor([[0.0] * 15 + [9.0]]))  # action 15 = safe card of category 7: not on map 1
+
+        @staticmethod
+        def predict(obs, deterministic=True):
+            return 15, None
+    from baselines import RLPolicy
+    obs = np.zeros(20, dtype=np.float32)
+    FakeModel.observation_space = type("S", (), {"shape": (20,)})
+    masked, raw = RLPolicy(FakeModel, "m", masked=True), RLPolicy(FakeModel, "r", masked=False)
+    masked.reset(np.random.default_rng(0))
+    for stage in (1, 2, 3):
+        assert action_mask(stage)[masked.act(obs, stage)], "the masked policy chose an invalid card"
+    assert raw.act(obs, 1) == 15
+    print("ok  masking removes invalid actions for RL policies; the raw agent keeps them")
+
+
 if __name__ == "__main__":
+    check_action_masking_for_rl_policies()
     check_observation_version_2()
     check_improvement_reward()
     check_default_world_has_no_learning()
