@@ -98,6 +98,18 @@ Best simple rule: 0.027 / 0.050 / 0.075. Ceiling (cheating coach): 0.040 / 0.072
 
 Honest reading: A2C gained the most, and with masking A2C and PPO are both above the best simple rule at all three speeds (A2C by about 8% at 0.06 and 12% at 0.10; PPO by about 4% and 3%). DQN stays below the standard pattern. One seed: the Phase B run with five seeds must confirm it before we claim it. Because masking removes invalid actions, the "invalid < 0.5" gate of B3 only matters for the raw agent; report both.
 
+### A10. Phase B: five seeds (Model 3 + masking; `python phase_b_report.py --write`, 2026-11-12)
+Winner rule of B3/B4 (reward per card at the last five evaluations, mean over 5 seeds): PPO 0.193 (std 0.022, invalid 0.03), A2C 0.192 (std 0.062, invalid 0.90, fails the gate), DQN 0.151 (std 0.011, invalid 1.60, fails the gate). By the rule as written the winner is PPO. Note: A2C and PPO are tied on reward per card, and the gate only fails A2C as a RAW agent; the game masks invalid cards.
+
+Skill gain on the held-out real players, masked, mean over the 5 seeds (spread across seeds), practise rate 0.03 / 0.06 / 0.10:
+- standard pattern 0.0243 / 0.0472 / 0.0756; greedy with variety 0.0272 / 0.0497 / 0.0739 (best simple rule, roughly)
+- PPO 0.0275 (+-0.0020) / 0.0505 (+-0.0036) / 0.0759 (+-0.0055): about equal to the best simple rule
+- A2C 0.0311 (+-0.0019) / 0.0582 (+-0.0032) / 0.0892 (+-0.0044): +14% / +17% / +18% over the best simple rule; the WORST A2C seed (0.0286 / 0.0541 / 0.0834) is above the best simple rule at every speed
+- DQN 0.0219 / 0.0412 / 0.0634: below the standard pattern
+- ceiling (cheating coach, A8): 0.040 / 0.072 / 0.107
+
+Honest reading: with five seeds, A2C reliably beats the simple rules in this simulator, PPO ties them, DQN loses. The single-seed picture (PPO first) was a seed effect. Open decision for the owner: the winner rule picks PPO by training reward, but the research question is about player improvement, where A2C is clearly best. Changing a rule after seeing the results must be written down openly (not hidden); see the note in Part B.
+
 ## Part B - which of the three algorithms (PPO, DQN, A2C) is best
 
 ### B1. What we compare
