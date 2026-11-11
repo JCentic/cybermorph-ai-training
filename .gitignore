@@ -2,23 +2,27 @@
 # CYBERMORPH COMPARISON SUITE GITIGNORE
 # ==============================================================================
 
-# 📦 1. Python Virtual Environment (NEVER commit - too massive)
+# 1. Python virtual environment (never commit - too massive)
 venv/
 
-# 🐍 2. Python Compile Cache (Generated automatically on execution)
+# 2. Python compile cache (generated automatically on execution)
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 
-# 📊 3. Raw & Averaged Training Data Logs (Generated locally)
+# 3. Bulky per-step training logs (generated locally, re-creatable)
 results/*.csv
 results_all_steps/
 
-# 📝 4. Markdown Files (As requested)
-*.md
-charts/*.md
+# 3b. Real players' exported play data (has participant codes): never commit
+data/
 
-# 💻 5. OS-Specific System Files
+# 4. Trained models: every run's models stay local; only models/frozen/ is committed
+#    (the one chosen model, see RESULTS.md). Notes (*.md) are NOT ignored any more:
+#    they were lost in the 2026 PC reset because they were never in git.
+models/*.zip
+
+# 5. OS-specific system files
 .DS_Store
 Thumbs.db

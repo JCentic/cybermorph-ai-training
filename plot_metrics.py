@@ -17,6 +17,7 @@ WHAT IT DOES:
 """
 
 import os
+import glob
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -28,19 +29,18 @@ def generate_comparison_plots():
     # Make sure the charts output directory exists
     os.makedirs(charts_dir, exist_ok=True)
     
-    ppo_path = os.path.join(results_dir, "ppo_results.csv")
-    dqn_path = os.path.join(results_dir, "dqn_results.csv")
-    a2c_path = os.path.join(results_dir, "a2c_results.csv")
-    
-    # Load available datasets
+    # Load available datasets: one file per seed (<algo>_results_seed_<n>.csv),
+    # joined into one table per algorithm. The 'seed' column keeps them apart.
+    # Each file has one row per map stage (1 to 4) and a pooled row (stage 0).
     raw_data = {}
-    if os.path.exists(ppo_path):
-        raw_data['PPO'] = pd.read_csv(ppo_path)
-    if os.path.exists(dqn_path):
-        raw_data['DQN'] = pd.read_csv(dqn_path)
-    if os.path.exists(a2c_path):
-        raw_data['A2C'] = pd.read_csv(a2c_path)
-        
+    stage_data = {}
+    for algo in ('PPO', 'DQN', 'A2C'):
+        seed_files = sorted(glob.glob(os.path.join(results_dir, f"{algo.lower()}_results_seed_*.csv")))
+        if seed_files:
+            all_rows = pd.concat([pd.read_csv(p) for p in seed_files], ignore_index=True)
+            stage_data[algo] = all_rows[all_rows['stage'] > 0]
+            raw_data[algo] = all_rows[all_rows['stage'] == 0]
+
     if not raw_data:
         print("Error: No training results found in results/ folder. Run your training scripts first!")
         return
@@ -52,7 +52,7 @@ def generate_comparison_plots():
     for algo, df in raw_data.items():
         # Group identical step intervals together (e.g. all 5 rows for step 10,000)
         # and calculate the mean for each column
-        df_agg = df.groupby('step').mean().reset_index()
+        df_agg = df.drop(columns=['seed', 'stage']).groupby('step').mean().reset_index()
         aggregated_data[algo] = df_agg
         print(f"  - {algo:<4} : Aggregated {len(df)} raw rows down to {len(df_agg)} clean step steps.")
         
@@ -135,6 +135,20 @@ def generate_comparison_plots():
             div_r = last_row.get('unique_attacks_used', 0.0)
             report_lines.append(f"| **{algo}** | {mean_r:.2f} | ± {std_r:.2f} | {div_r:.1f} / 8 |")
             
+    # Per map stage at the last step (mean over seeds): the effect should grow with the map
+    report_lines += [
+        "\nBy map stage at the last step (mean reward over seeds; invalid = invalid actions per episode):\n",
+        "| Algorithm | Stage | Mean Reward | Attack Diversity (/8) | Invalid |",
+        "| :--- | :---: | :---: | :---: | :---: |",
+    ]
+    for algo, rows in stage_data.items():
+        last_step = rows['step'].max()
+        final = rows[rows['step'] == last_step].groupby('stage')[['mean_reward', 'unique_attacks_used', 'invalid_actions']].mean()
+        for stage, row in final.iterrows():
+            report_lines.append(
+                f"| **{algo}** | {int(stage)} | {row['mean_reward']:.2f} | {row['unique_attacks_used']:.1f} | {row['invalid_actions']:.1f} |"
+            )
+
     with open(report_path, 'w') as f:
         f.write("\n".join(report_lines))
     print(f"[OK] Generated Capstone Summary Report: {report_path}")
