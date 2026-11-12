@@ -110,6 +110,20 @@ Skill gain on the held-out real players, masked, mean over the 5 seeds (spread a
 
 Honest reading: with five seeds, A2C reliably beats the simple rules in this simulator, PPO ties them, DQN loses. The single-seed picture (PPO first) was a seed effect. Open decision for the owner: the winner rule picks PPO by training reward, but the research question is about player improvement, where A2C is clearly best. Changing a rule after seeing the results must be written down openly (not hidden); see the note in Part B.
 
+### A11. Model 4: simulated training players, real held-out testers (2026-11-12, Phase B, five seeds) - THE CURRENT RESULT
+What changed from Model 3: the 5 invented training players were replaced by 60 SIMULATED players fitted to the real testers' statistics (`python -m analysis.simulate_players --write`: a logistic model, chance of a wrong answer = player level + category difficulty; categories with few cards, like Malware and Ransomware, get wide ranges). Testers QHMNY3, 7DS5GT and K8DFGB were kept out of the fit and are the evaluation players (individual real testers, `data/profiles_holdout.json`). The fit used 6 testers (2EWZB7, 3WBUF6, 886UKY, 9RFYK5, KCFEDW, VJV9T3). Every simulated player is labelled "simulated". Model 3 files: `models/model3_phaseB/`.
+
+Winner rule (B3/B4, written before the results, unchanged): PPO 0.205 (std 0.006), DQN 0.221 (std 0.009), A2C 0.225 (std 0.007); all three pass the invalid gate as raw agents (0.00 / 0.08 / 0.05). A2C and DQN tie (the gap is smaller than the spread), the smaller spread wins: **A2C**. No rule had to be changed.
+Frozen: A2C seed 46 (`models/frozen/a2c_seed_46.zip`). Seeds 43 and 46 tie on the rule's score (0.232); seed 46 has the better skill gain (0.0300 / 0.0562 / 0.0862) and fewer invalid actions (0.01).
+
+Skill gain on the 3 held-out real testers, masked, mean over 5 seeds, practise rate 0.03 / 0.06 / 0.10:
+- standard pattern 0.0208 / 0.0404 / 0.0647; greedy weakest 0.0280 / 0.0486 / 0.0694; greedy with variety 0.0270 / 0.0489 / 0.0721
+- PPO 0.0244 / 0.0458 / 0.0703; DQN 0.0250 / 0.0475 / 0.0743
+- **A2C 0.0282 / 0.0528 / 0.0810** (spread across seeds 0.0023 / 0.0041 / 0.0058)
+- ceiling (cheating coach, same players) 0.037 / 0.066 / 0.098
+
+Honest reading: A2C is the best of the learned policies and beats the best simple rule by about +1% / +8% / +12% (0.03 / 0.06 / 0.10). At 0.03 it only ties, and the worst A2C seeds (0.0250 / 0.0471 / 0.0725) do not all beat the best simple rule, so the advantage is real on average but not guaranteed for every seed. PPO and DQN do not beat the best simple rule at 0.03 and 0.06. A2C closes about a third of the gap between the simple rules and the ceiling. The evaluation has only 3 real testers and the training used a fit of 6, so this is a small-sample result; more tester data (especially Malware, Ransomware, Public Wi-Fi) is the main future work.
+
 ## Part B - which of the three algorithms (PPO, DQN, A2C) is best
 
 ### B1. What we compare

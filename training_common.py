@@ -40,6 +40,19 @@ CSV_HEADER = ['seed', 'step', 'stage', 'mean_reward', 'reward_std', 'unique_atta
 # The players the evaluation uses that the agent NEVER trains on: the three real groups made from the testers' data
 # (python -m analysis.build_profiles --write). Without that file the evaluation falls back to the training players and says so.
 HELD_OUT_FILE = os.path.join("data", "profiles_real.json")
+# Model 4 (2026-11-12): the TRAINING players are simulated from the real testers' statistics (python -m analysis.simulate_players --write), and the evaluation players are
+# individual real testers that the simulation never used (data/profiles_holdout.json). If those files are missing, everything falls back to the earlier setup.
+SIMULATED_FILE = os.path.join("data", "profiles_simulated.json")
+HOLDOUT_FILE = os.path.join("data", "profiles_holdout.json")
+
+
+def load_training_profiles(path=SIMULATED_FILE):
+    """The simulated players for training (dict like DERIVED_WEAKNESS), or None when the file is missing (then the five invented players are used)."""
+    if not os.path.exists(path):
+        return None
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    return dict(data.get("profiles", {})) or None
 DEFAULT_RESPONSE_MS = 3000.0
 TRAIN_PRACTISE_RATE = 0.06
 OBSERVATION_VERSION = 2   # Model 3: the agent also sees the practice counts and the share of the run left
@@ -48,13 +61,15 @@ OBSERVATION_VERSION = 2   # Model 3: the agent also sees the practice counts and
 def load_held_out_profiles(path=HELD_OUT_FILE):
     """The real-data profiles in the shape the environment wants, or None when the file is not there.
     Keys are "real-beginner", "real-intermediate" and "real-expert"."""
+    if path == HELD_OUT_FILE and os.path.exists(HOLDOUT_FILE):
+        path = HOLDOUT_FILE  # the individual held-out testers replace the three groups when they exist
     if not os.path.exists(path):
         return None
     with open(path, encoding="utf-8") as f:
         data = json.load(f)
     profiles = {}
     for name, profile in data.get("profiles", {}).items():
-        profiles["real-" + name] = {
+        profiles[name if name.startswith("real-") else "real-" + name] = {
             "username": "real " + name,
             "description": "built from %s tester(s), %s cards" % (profile.get("people", "?"), profile.get("cards", "?")),
             "weakness": list(profile["weakness"]),
@@ -198,7 +213,9 @@ def run_training(algo_name, algo_class, model_kwargs, seeds, total_timesteps=TOT
         # Separate environments for training and evaluation
         # Model 2: the player learns from practice (practise rate 0.06) and the agent is paid for the player's improvement. The comparison afterwards
         # (evaluate_policies.py) also tests at 0.03 and 0.10, so the result does not depend on this one guess.
-        env = CyberMorphEnv(learning=True, practise_rate=TRAIN_PRACTISE_RATE, reward_mode="improvement", observation_version=OBSERVATION_VERSION)
+        train_profiles = load_training_profiles()
+        print("  Training players: %s" % ("%d simulated from the real testers' statistics" % len(train_profiles) if train_profiles else "the 5 invented players (no data/profiles_simulated.json)"))
+        env = CyberMorphEnv(profiles=train_profiles, learning=True, practise_rate=TRAIN_PRACTISE_RATE, reward_mode="improvement", observation_version=OBSERVATION_VERSION)
         held_out = load_held_out_profiles()
         if held_out is None:
             print("  NOTE: data/profiles_real.json is missing, so the evaluation uses the TRAINING players (not held out).")
